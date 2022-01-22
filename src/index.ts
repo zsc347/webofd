@@ -1,3 +1,3 @@
-export function ooxml() {
-    return "hello, ooxml";
+export function ofdJs() {
+    return "hello, ofd-js";
 }
