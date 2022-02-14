@@ -14,7 +14,7 @@ export class PageProxy {
         await this.page.ensure();
     }
 
-    public getArea() {
+    public getBox() {
         return this.page.area;
     }
 }

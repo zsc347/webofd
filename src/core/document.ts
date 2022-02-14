@@ -42,7 +42,9 @@ export class OFDDocument {
         root.import(rootXML);
         await root.ensure();
         const pages = root.getPages();
-        this._pages = pages.map(page => new PageProxy({ doc: this, page: page }));
+        this._pages = pages.map(
+            page => new PageProxy({ doc: this, page: page })
+        );
 
         console.trace("document init done");
     }
@@ -78,4 +80,6 @@ export class OFDDocument {
     public get zip() {
         return this._zip;
     }
+
+    public dispose() {}
 }

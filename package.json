@@ -147,6 +147,7 @@
         ]
     },
     "dependencies": {
+        "@material-ui/core": "^4.12.3",
         "jszip": "^3.7.1"
     }
 }
