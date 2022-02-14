@@ -1,4 +1,4 @@
-import { OFDRect } from "../../common/utils";
+import { OFDRect, parseRect } from "../../common/utils";
 import { OFDFont } from "./OFDFont";
 
 export abstract class OFDBlock {
@@ -12,7 +12,7 @@ export abstract class OFDBlock {
         return this._element;
     }
 
-    abstract get type(): string;
+    abstract get type(): BlockType;
 }
 
 export interface TextCode {
@@ -23,20 +23,72 @@ export interface TextCode {
 }
 
 export class OFDTextObject extends OFDBlock {
-    public boundary?: OFDRect;
-    public id?: string;
-    public _font?: OFDFont;
-    public _size?: number;
+    private _boundary!: OFDRect;
+    private _id!: string;
+    private _font!: OFDFont;
+    private _size!: number;
+    private _textCodes!: TextCode[];
 
     constructor({ element }: { element: Element }) {
         super({ element });
+        this._textCodes = [];
+        this.init();
     }
 
-    get type(): string {
-        return "TextObject";
+    private init() {
+        const root = this.element;
+        this._id = root.getAttribute("ID")!;
+        this._boundary = parseRect(root.getAttribute("Boundary")!);
+        this._size = parseFloat(root.getAttribute("Size")!);
+        this._font = OFDFont.of(root.getAttribute("Font")!);
+
+        const children = this.element.children;
+        for (let i = 0, l = children.length; i < l; i++) {
+            const ele = children.item(i)!;
+            if (ele.localName === "TextCode") {
+                const deltaX = ele.getAttribute("DeltaX");
+                const x = parseFloat(ele.getAttribute("X")!);
+                const y = parseFloat(ele.getAttribute("Y")!);
+                const text = ele.textContent!;
+                this._textCodes.push({
+                    deltaX,
+                    x,
+                    y,
+                    text
+                } as TextCode);
+            }
+        }
+    }
+
+    public get type(): BlockType {
+        return BlockType.TextObject;
+    }
+
+    public get size() {
+        return this._size;
+    }
+
+    public get boundary() {
+        return this._boundary;
+    }
+
+    public get font() {
+        return this._font;
+    }
+
+    public get textCodes() {
+        return this._textCodes;
     }
 }
 
-export function importBlock(element: Element): OFDBlock {
+export function importBlock(element: Element): OFDBlock | null {
+    if (element.localName !== "TextObject") {
+        console.warn(`unexpect object in layer`, element);
+        return null;
+    }
     return new OFDTextObject({ element });
+}
+
+export enum BlockType {
+    TextObject = "TextObject"
 }

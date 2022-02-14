@@ -14,6 +14,13 @@ export class PageProxy {
         await this.page.ensure();
     }
 
+    public render({ ctx }: { ctx: CanvasRenderingContext2D }) {
+        const layers = this.page.contentLayers;
+        for (let layer of layers) {
+            layer.paint({ ctx });
+        }
+    }
+
     public getBox() {
         return this.page.area;
     }
