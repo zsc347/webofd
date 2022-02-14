@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Zip, ZipEntry } from "../../src/core/zip";
+import { OFDDocument } from "../../src/core/document";
+import { Zip } from "../../src/core/zip";
 
-const url = "static/sample.ofd";
-
+const sample = "static/sample.ofd";
 function ViewerApp() {
-    const [entries, setEntries] = useState<ZipEntry[]>([]);
+    const [data, setData] = useState<string>("");
 
     useEffect(() => {
         let active = true;
 
         (async function () {
-            const zip = new Zip({ url });
-            const entreis = await zip.entries();
+            const zip = new Zip({ url: sample });
+            const doc = new OFDDocument({ zip });
+            await doc.init();
+            const page = await doc.getPage(0);
+            if (!page) {
+                throw new Error("unexpected");
+            }
             if (active) {
-                setEntries(entreis);
+                setData(JSON.stringify(page.getArea()));
             }
         })();
 
@@ -23,7 +28,11 @@ function ViewerApp() {
         };
     }, []);
 
-    return <div>{JSON.stringify(entries)} </div>;
+    return (
+        <div>
+            <div>{data}</div>
+        </div>
+    );
 }
 
 ReactDOM.render(<ViewerApp />, document.getElementById("root"));
