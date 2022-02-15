@@ -1,11 +1,14 @@
+import { FontLoader } from "../display/FontLoader";
 import { importMedia, MultiMedia } from "./media";
 import { PageProxy } from "./page";
 import { OFDDocumentElement } from "./schema/OFDDocumentElement";
+import { OFDFontElement, OFDFontFace } from "./schema/OFDFont";
 import { importRootNode } from "./schema/xml";
 import { Zip } from "./zip";
 
-type TemplateMap = Record<string, PageProxy>;
-type ResourceMap = Record<string, MultiMedia>;
+type TemplateMap = Record<string, PageProxy | undefined>;
+type ResourceMap = Record<string, MultiMedia | undefined>;
+type FontsMap = Record<string, OFDFontFace | undefined>;
 
 export class OFDDocument {
     private _zip: Zip;
@@ -15,14 +18,19 @@ export class OFDDocument {
     private _version: string | null;
     private _tplMap: TemplateMap;
     private _resMap: ResourceMap;
+    private _fontsMap: FontsMap;
 
-    constructor({ zip }: { zip: Zip }) {
+    private fontLoader: FontLoader;
+
+    constructor({ zip, fontLoader }: { zip: Zip; fontLoader: FontLoader }) {
         this._zip = zip;
         this._pages = null;
         this._ns = null;
         this._version = null;
         this._tplMap = Object.create(null);
         this._resMap = Object.create(null);
+        this._fontsMap = Object.create(null);
+        this.fontLoader = fontLoader;
     }
 
     public async init() {
@@ -48,7 +56,6 @@ export class OFDDocument {
 
         // read pages and templates
         const rootXML = await zip.loadAsDOM(docRootName);
-
         const root = new OFDDocumentElement({
             doc: this,
             el: rootXML.getRootNode() as Element
@@ -63,7 +70,8 @@ export class OFDDocument {
             this._tplMap[page.gid] = tpl;
         });
 
-        const loadResources = async () => {
+        // read medias
+        const loadMedias = async () => {
             const { documentRes } = root;
             if (!documentRes) {
                 return;
@@ -85,17 +93,52 @@ export class OFDDocument {
                 }
             }
         };
+        await loadMedias();
 
-        await loadResources();
+        // read and import fonts
+        const loadFonts = async () => {
+            const { publicRes } = root;
+            if (!publicRes) {
+                return;
+            }
+            const resDOM = await zip.loadAsDOM(`Doc_0/${publicRes}`);
+            const resXML = importRootNode(resDOM)!;
+            const fontsEl = resXML.getElementsByTagNameNS(
+                resXML.namespaceURI,
+                "Fonts"
+            )[0];
+            if (!fontsEl) {
+                return;
+            }
+            const fontEls = fontsEl.children;
+            const processes = [];
+            for (let i = 0, l = fontEls.length; i < l; i++) {
+                const fontEl = fontEls.item(i)!;
+                const font = new OFDFontElement({ doc: this, el: fontEl });
+                this._fontsMap[font.fontID] = font.face;
+                processes.push(this.fontLoader.importFont(font));
+            }
+            await Promise.all(processes);
+        };
+        await loadFonts();
+
         console.trace("document init done");
     }
 
     public getTemplate(templateID: string) {
-        return this._tplMap[templateID];
+        const tpl = this._tplMap[templateID];
+        if (!tpl) {
+            throw new Error(`template not found ${templateID}`);
+        }
+        return tpl;
     }
 
     public getResource(resourceID: string) {
-        return this._resMap[resourceID];
+        const res = this._resMap[resourceID];
+        if (!res) {
+            throw new Error(`res not found ${resourceID}`);
+        }
+        return res;
     }
 
     public async getPage(pageNum: number): Promise<PageProxy | null> {
@@ -109,6 +152,14 @@ export class OFDDocument {
         const page = this._pages[pageNum];
         await page.ensure();
         return page;
+    }
+
+    public getFont(fontID: string) {
+        const face = this._fontsMap[fontID];
+        if (!face) {
+            throw new Error(`font face not found ${fontID}`);
+        }
+        return face;
     }
 
     public async getPages(): Promise<PageProxy[]> {
@@ -130,5 +181,7 @@ export class OFDDocument {
         return this._zip;
     }
 
-    public dispose() {}
+    public dispose() {
+        this.fontLoader.dispose();
+    }
 }

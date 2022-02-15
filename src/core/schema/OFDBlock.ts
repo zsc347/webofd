@@ -1,5 +1,6 @@
 import { OFDRect, parseCTM, parseRect } from "../../common/utils";
-import { OFDFont } from "./OFDFont";
+import { OFDDocument } from "../document";
+import { OFDFontFace } from "./OFDFont";
 
 export abstract class OFDBlock {
     protected _el: Element;
@@ -23,15 +24,17 @@ export interface TextCode {
 }
 
 export class OFDTextObject extends OFDBlock {
+    private doc: OFDDocument;
     private _boundary!: OFDRect;
     private _id!: string;
-    private _font!: OFDFont;
+    private _font!: OFDFontFace;
     private _size!: number;
     private _textCodes!: TextCode[];
 
-    constructor({ element: el }: { element: Element }) {
-        super({ el: el });
+    constructor({ doc, el }: { doc: OFDDocument; el: Element }) {
+        super({ el });
         this._textCodes = [];
+        this.doc = doc;
         this.init();
     }
 
@@ -40,7 +43,7 @@ export class OFDTextObject extends OFDBlock {
         this._id = root.getAttribute("ID")!;
         this._boundary = parseRect(root.getAttribute("Boundary")!);
         this._size = parseFloat(root.getAttribute("Size")!);
-        this._font = OFDFont.of(root.getAttribute("Font")!);
+        this._font = this.doc.getFont(root.getAttribute("Font")!);
 
         const children = this.element.children;
         for (let i = 0, l = children.length; i < l; i++) {
@@ -115,14 +118,14 @@ export class OFDImageObject extends OFDBlock {
     }
 }
 
-export function importBlock(element: Element): OFDBlock | null {
-    if (element.localName === "TextObject") {
-        return new OFDTextObject({ element });
+export function importBlock(doc: OFDDocument, el: Element): OFDBlock | null {
+    if (el.localName === "TextObject") {
+        return new OFDTextObject({ doc, el });
     }
-    if (element.localName === "ImageObject") {
-        return new OFDImageObject({ el: element });
+    if (el.localName === "ImageObject") {
+        return new OFDImageObject({ el });
     }
-    console.warn(`unexpect object in layer`, element);
+    console.warn(`unexpect object in layer`, el);
     return null;
 }
 

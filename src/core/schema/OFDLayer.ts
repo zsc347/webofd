@@ -76,7 +76,12 @@ export class OFDLayerElement implements OFDElement {
             const my = obj.boundary.top + text.y;
             const x = mm2px(mx);
             const y = mm2px(my);
+            ctx.save();
+            const fontFamily = obj.font.familyName;
+            const fontSize = mm2px(obj.size);
+            ctx.font = `${fontSize}px ${fontFamily}`;
             ctx.fillText(text.text, x, y);
+            ctx.restore();
         };
         texts.forEach(paint);
         console.log(`texts painted`);
@@ -111,7 +116,7 @@ export class OFDLayerElement implements OFDElement {
             const blocks: OFDBlock[] = [];
             for (let i = 0, l = children.length; i < l; i++) {
                 const ele = children.item(i) as Element;
-                const block = importBlock(ele);
+                const block = importBlock(this.doc, ele);
                 if (block) {
                     blocks.push(block);
                 }

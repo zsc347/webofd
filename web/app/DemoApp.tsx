@@ -5,6 +5,7 @@ import { OFDDocument } from "../../src/core/document";
 import { Zip } from "../../src/core/zip";
 import { PageView } from "../../src/display/PageView";
 import "./app.css";
+import { FontLoader } from "../../src/display/FontLoader";
 
 const useStyles = makeStyles({
     root: {
@@ -37,7 +38,8 @@ function ViewerApp() {
         const container = containerRef.current!;
         (async function () {
             const zip = new Zip({ url: sample });
-            doc = new OFDDocument({ zip });
+            const fontLoader = new FontLoader();
+            doc = new OFDDocument({ zip, fontLoader });
             await doc.init();
             const page = await doc.getPage(0);
             if (!page) {

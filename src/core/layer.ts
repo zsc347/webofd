@@ -31,7 +31,7 @@ export class LayerProxy {
             const children = root.children;
             for (let i = 0, l = children.length; i < l; i++) {
                 const element = children.item(i) as Element;
-                const block = importBlock(element);
+                const block = importBlock(this.doc, element);
                 if (block) {
                     this._blocks.push(block);
                 }

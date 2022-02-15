@@ -1,11 +1,49 @@
-export class OFDFont {
-    private _fontId: string;
+import { OFDDocument } from "../document";
 
-    constructor({ fontID }: { fontID: string }) {
-        this._fontId = fontID;
+export interface OFDFontFace {
+    familyName: string;
+    fontID: string;
+}
+
+export class OFDFontElement {
+    private doc: OFDDocument;
+    private _el: Element;
+    private _fontId: string;
+    private _familyName: string;
+    private _loc: string;
+
+    constructor({ doc, el }: { doc: OFDDocument; el: Element }) {
+        this.doc = doc;
+        this._el = el;
+        this._familyName = el.getAttribute("FamilyName")!;
+        this._fontId = el.getAttribute("ID")!;
+        this._loc = el.getElementsByTagNameNS(
+            el.namespaceURI,
+            "FontFile"
+        )[0].textContent!;
     }
 
-    public static of(fontID: string) {
-        return new OFDFont({ fontID });
+    public async load(): Promise<string> {
+        const binary = await this.doc.zip.load(`Doc_0/Res/${this._loc}`);
+        return URL.createObjectURL(new Blob([binary]));
+    }
+
+    public get familyName() {
+        return this._familyName;
+    }
+
+    public get loc() {
+        return this._loc;
+    }
+
+    public get fontID() {
+        return this._fontId;
+    }
+
+    public get face() {
+        return {
+            fontID: this._fontId,
+            familyName: this._familyName
+        } as OFDFontFace;
     }
 }
