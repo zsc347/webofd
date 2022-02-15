@@ -1,9 +1,11 @@
 import { mm2px } from "../../common/unit";
 import { OFDDocument } from "../document";
+import { ImageMedia, MediaType } from "../media";
 import {
     BlockType,
     importBlock,
     OFDBlock,
+    OFDImageObject,
     OFDTextObject,
     TextCode
 } from "./OFDBlock";
@@ -44,30 +46,30 @@ export class OFDLayerElement implements OFDElement {
         return this._element;
     }
 
-    public paint({ ctx }: { ctx: CanvasRenderingContext2D }) {
-        console.log(`start to paint layer`, ctx, this);
+    public async paint({ ctx }: { ctx: CanvasRenderingContext2D }) {
         const blocks = this.parseBlocks();
-        blocks.forEach(blk => this.paintBlock(blk, { ctx }));
+        for (let block of blocks) {
+            await this.paintBlock(block, { ctx });
+        }
     }
 
-    private paintBlock(
+    private async paintBlock(
         block: OFDBlock,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
-        console.log(`start to paint layer`, ctx, this);
-        const blocks = this.parseBlocks();
-        blocks.forEach(block => {
-            if (block.type === BlockType.TextObject) {
-                this.paintText(block as OFDTextObject, { ctx });
-            }
-        });
+        if (block.type === BlockType.TextObject) {
+            await this.paintText(block as OFDTextObject, { ctx });
+        }
+        if (block.type === BlockType.ImageObject) {
+            await this.paintImage(block as OFDImageObject, { ctx });
+        }
     }
 
     private paintText(
         obj: OFDTextObject,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
-        console.log(`paing text obj`, obj);
+        // console.log(`paing text obj`, obj);
         const texts = obj.textCodes;
         const paint = (text: TextCode) => {
             const mx = obj.boundary.left + text.x;
@@ -77,6 +79,30 @@ export class OFDLayerElement implements OFDElement {
             ctx.fillText(text.text, x, y);
         };
         texts.forEach(paint);
+        console.log(`texts painted`);
+    }
+
+    private async paintImage(
+        obj: OFDImageObject,
+        { ctx }: { ctx: CanvasRenderingContext2D }
+    ) {
+        console.log(`paint image object`, obj);
+        const resId = obj.resourceID;
+        const { doc } = this;
+        const res = doc.getResource(resId);
+        if (res.type !== MediaType.Image) {
+            console.warn("unexpect resource", res);
+        }
+        const media = res as ImageMedia;
+        const img = await media.load();
+
+        const x = mm2px(obj.boundary.left);
+        const y = mm2px(obj.boundary.top);
+        const w = mm2px(obj.boundary.width);
+        const h = mm2px(obj.boundary.height);
+        ctx.drawImage(img, x, y, w, h);
+
+        console.log("image painted", img);
     }
 
     private parseBlocks() {
@@ -92,6 +118,7 @@ export class OFDLayerElement implements OFDElement {
             }
             this._blocks = blocks;
         }
+        console.log(`==> blocks`, this._blocks);
         return this._blocks;
     }
 

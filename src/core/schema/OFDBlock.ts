@@ -1,15 +1,15 @@
-import { OFDRect, parseRect } from "../../common/utils";
+import { OFDRect, parseCTM, parseRect } from "../../common/utils";
 import { OFDFont } from "./OFDFont";
 
 export abstract class OFDBlock {
-    protected _element: Element;
+    protected _el: Element;
 
-    constructor({ element }: { element: Element }) {
-        this._element = element;
+    constructor({ el }: { el: Element }) {
+        this._el = el;
     }
 
     public get element() {
-        return this._element;
+        return this._el;
     }
 
     abstract get type(): BlockType;
@@ -29,8 +29,8 @@ export class OFDTextObject extends OFDBlock {
     private _size!: number;
     private _textCodes!: TextCode[];
 
-    constructor({ element }: { element: Element }) {
-        super({ element });
+    constructor({ element: el }: { element: Element }) {
+        super({ el: el });
         this._textCodes = [];
         this.init();
     }
@@ -81,14 +81,52 @@ export class OFDTextObject extends OFDBlock {
     }
 }
 
-export function importBlock(element: Element): OFDBlock | null {
-    if (element.localName !== "TextObject") {
-        console.warn(`unexpect object in layer`, element);
-        return null;
+export class OFDImageObject extends OFDBlock {
+    private _resID!: string;
+    private _ctm!: number[];
+    private _boundary!: OFDRect;
+
+    constructor({ el }: { el: Element }) {
+        super({ el });
+        this.init();
     }
-    return new OFDTextObject({ element });
+
+    private init() {
+        const el = this.element;
+        this._resID = el.getAttribute("ResourceID")!;
+        this._ctm = parseCTM(el.getAttribute("CTM")!);
+        this._boundary = parseRect(el.getAttribute("Boundary")!);
+    }
+
+    public get resourceID() {
+        return this._resID;
+    }
+
+    public get ctm() {
+        return this._ctm;
+    }
+
+    public get boundary() {
+        return this._boundary;
+    }
+
+    get type(): BlockType {
+        return BlockType.ImageObject;
+    }
+}
+
+export function importBlock(element: Element): OFDBlock | null {
+    if (element.localName === "TextObject") {
+        return new OFDTextObject({ element });
+    }
+    if (element.localName === "ImageObject") {
+        return new OFDImageObject({ el: element });
+    }
+    console.warn(`unexpect object in layer`, element);
+    return null;
 }
 
 export enum BlockType {
-    TextObject = "TextObject"
+    TextObject = "TextObject",
+    ImageObject = "ImageObject"
 }

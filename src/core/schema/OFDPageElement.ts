@@ -4,54 +4,56 @@ import { OFDElement } from "./OFDElement";
 import { OFDLayerElement } from "./OFDLayer";
 import { importRootNode } from "./xml";
 
+export interface TempalteRef {
+    templateID: string;
+    zOrder: string;
+}
+
 export class OFDPageElement implements OFDElement {
     private doc: OFDDocument;
     private _element: Element | null;
-    private _pageID: string;
+    private _gid: string;
     private _area: OFDRect | null;
     private _contentLayers: OFDLayerElement[] | null;
 
-    private _inited: boolean;
+    private _isTemplate: boolean;
+    private _templateRefs: TempalteRef[];
 
     constructor({
         doc,
-        pageID,
-        xml
+        gid,
+        xml,
+        template = false
     }: {
         doc: OFDDocument;
-        pageID: string;
+        gid: string;
         xml: Document;
+        template?: boolean;
     }) {
         this.doc = doc;
-        this._pageID = pageID;
+        this._gid = gid;
         this._element = importRootNode(xml);
-        this._inited = false;
         this._area = null;
         this._contentLayers = null;
+        this._isTemplate = Boolean(template);
+        this._templateRefs = [];
+
+        this.init();
     }
 
-    private checkInited() {
-        if (!this._inited) {
-            throw new Error("must call `ensur` before access attributes");
-        }
-    }
-
-    public ensure() {
-        if (this._inited) {
-            return;
-        }
+    private init() {
         if (!this._element || !this._element.namespaceURI) {
             throw new Error("element not settled");
         }
         const root = this._element;
         const ns = this._element.namespaceURI;
 
-        // init area
+        // read area
         const areaEl = root.getElementsByTagNameNS(ns, "Area")![0];
         const box = areaEl.getElementsByTagNameNS(ns, "PhysicalBox")![0];
         this._area = parseRect(box.textContent!);
 
-        // init content layers
+        // read content layers
         const layerEls = root.getElementsByTagNameNS(ns, "Layer");
         const layers: OFDLayerElement[] = [];
         layers.length = layerEls.length;
@@ -65,7 +67,17 @@ export class OFDPageElement implements OFDElement {
         }
         this._contentLayers = layers;
 
-        this._inited = true;
+        // read template refs
+        const templateEls = root.getElementsByTagNameNS(ns, "Template");
+        for (let i = 0, l = templateEls.length; i < l; i++) {
+            const el = templateEls.item(i)!;
+            const templateID = el.getAttribute("TemplateID")!;
+            const zOrder = el.getAttribute("Background")!;
+            this._templateRefs.push({
+                templateID,
+                zOrder
+            } as TempalteRef);
+        }
     }
 
     public element(): Element {
@@ -75,17 +87,23 @@ export class OFDPageElement implements OFDElement {
         return this._element;
     }
 
-    public get pageID() {
-        return this._pageID;
+    public get gid() {
+        return this._gid;
     }
 
     public get area() {
-        this.checkInited();
         return this._area!;
     }
 
     public get contentLayers() {
-        this.checkInited();
         return this._contentLayers!;
+    }
+
+    public isTemplate() {
+        return this._isTemplate;
+    }
+
+    public get templateRefs() {
+        return this._templateRefs;
     }
 }

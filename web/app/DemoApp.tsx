@@ -1,6 +1,6 @@
+import ReactDOM from "react-dom";
 import { makeStyles } from "@material-ui/core";
 import { useEffect, useRef } from "react";
-import ReactDOM from "react-dom";
 import { OFDDocument } from "../../src/core/document";
 import { Zip } from "../../src/core/zip";
 import { PageView } from "../../src/display/PageView";
@@ -16,7 +16,8 @@ const useStyles = makeStyles({
         overflowY: "hidden",
         overflowX: "hidden",
         fontSize: 12,
-        padding: "24px"
+        padding: "24px",
+        backgroundColor: "#525659"
     },
     container: {
         left: "50%",

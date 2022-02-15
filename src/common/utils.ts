@@ -13,3 +13,7 @@ export function parseRect(rectStr: string) {
     const nums = rectStr.split(" ").map(s => parseInt(s));
     return rect(nums[0], nums[1], nums[2], nums[3]);
 }
+
+export function parseCTM(ctmStr: string) {
+    return ctmStr.split(" ").map(s => parseInt(s));
+}

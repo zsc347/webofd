@@ -6,15 +6,22 @@ import { importRootNode } from "./xml";
 export class OFDDocumentElement implements OFDElement {
     private doc: OFDDocument;
 
-    private _element: Element | null;
+    private _el: Element | null;
     private _inited: boolean;
     private _pages: OFDPageElement[];
+    private _templates: OFDPageElement[];
 
-    constructor({ doc }: { doc: OFDDocument }) {
+    private _publicRes: string;
+    private _documentRes: string;
+
+    constructor({ doc, el }: { doc: OFDDocument; el: Element }) {
         this.doc = doc;
-        this._element = null;
         this._inited = false;
         this._pages = [];
+        this._templates = [];
+        this._publicRes = "";
+        this._documentRes = "";
+        this._el = el;
     }
 
     private checkInited() {
@@ -27,41 +34,71 @@ export class OFDDocumentElement implements OFDElement {
         if (this._inited) {
             return;
         }
-        if (!this._element || !this._element.namespaceURI) {
+        if (!this._el || !this._el.namespaceURI) {
             throw new Error("illegal state, element not settled");
         }
+        const root = this._el;
+        const ns = this._el.namespaceURI;
+
+        const publicResEl = root.getElementsByTagNameNS(ns, "PublicRes")[0];
+        if (publicResEl) {
+            this._publicRes = publicResEl.textContent || "";
+        }
+
+        const documentResEl = root.getElementsByTagNameNS(ns, "DocumentRes")[0];
+        if (documentResEl) {
+            this._documentRes = documentResEl.textContent || "";
+        }
+
+        if (publicResEl)
+            this._pages = await this.loadPages(
+                root.getElementsByTagNameNS(ns, "Page"),
+                "Doc_0/"
+            );
+        this._templates = await this.loadPages(
+            root.getElementsByTagNameNS(ns, "TemplatePage"),
+            "Doc_0/",
+            true
+        );
+        this._inited = true;
+    }
+
+    private async loadPages(
+        collection: HTMLCollectionOf<Element>,
+        locPrefix = "",
+        isTemplate = false
+    ): Promise<OFDPageElement[]> {
         const { doc } = this;
         const { zip } = doc;
-        const root = this._element;
-        const ns = this._element.namespaceURI;
-        const pc = root.getElementsByTagNameNS(ns, "Page");
-
         const pages: OFDPageElement[] = [];
-        pages.length = pc.length;
         const contents = [];
-        for (let i = 0, l = pc.length; i < l; i++) {
-            const p = pc.item(i);
+        for (let i = 0, l = collection.length; i < l; i++) {
+            const p = collection.item(i);
             if (!p) {
                 throw new Error("illegal page element");
             }
             const loc = p.getAttribute("BaseLoc");
-            const pageID = p.getAttribute("ID");
-            if (!loc || !pageID) {
+            const gid = p.getAttribute("ID");
+            if (!loc || !gid) {
                 throw new Error("illegal page element");
             }
-            const dom = zip.loadAsDOM(`Doc_0/${loc}`);
+            const dom = zip.loadAsDOM(`${locPrefix}${loc}`);
             const promise = dom.then(xml => {
-                pages[i] = new OFDPageElement({ doc, pageID, xml });
+                pages[i] = new OFDPageElement({
+                    doc,
+                    gid,
+                    xml,
+                    template: isTemplate
+                });
             });
             contents.push(promise);
         }
         await Promise.all(contents);
-        this._pages = pages;
-        this._inited = true;
+        return pages;
     }
 
     public import(xml: Document) {
-        this._element = importRootNode(xml);
+        this._el = importRootNode(xml);
     }
 
     public getPages(): OFDPageElement[] {
@@ -69,10 +106,23 @@ export class OFDDocumentElement implements OFDElement {
         return this._pages;
     }
 
+    public getTemlates(): OFDPageElement[] {
+        this.checkInited();
+        return this._templates;
+    }
+
+    public get publicRes() {
+        return this._publicRes;
+    }
+
+    public get documentRes() {
+        return this._documentRes;
+    }
+
     public element(): Element {
-        if (!this._element) {
+        if (!this._el) {
             throw new Error("illegal: access before initialized");
         }
-        return this._element;
+        return this._el;
     }
 }

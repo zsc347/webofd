@@ -8,7 +8,7 @@ export class PageView {
 
     constructor({ page }: { page: PageProxy }) {
         this._page = page;
-        this.scale = 0.8;
+        this.scale = 1;
     }
 
     public paint(container: HTMLDivElement) {
@@ -21,7 +21,7 @@ export class PageView {
         div.appendChild(canvas);
         container.appendChild(div);
         const ctx = canvas.getContext("2d", { alpha: true })!;
-        const box = page.getBox();
+        const box = page.getPhysicalBox();
         const width = mm2px(box.width);
         const height = mm2px(box.height);
         canvas.width = width;
