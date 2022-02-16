@@ -1,11 +1,10 @@
-import ReactDOM from "react-dom";
-import { makeStyles } from "@material-ui/core";
 import { useEffect, useRef } from "react";
 import { OFDDocument } from "../../src/core/document";
 import { Zip } from "../../src/core/zip";
 import { PageView } from "../../src/display/PageView";
 import "./app.css";
 import { FontLoader } from "../../src/display/FontLoader";
+import { makeStyles } from "@material-ui/core";
 
 const useStyles = makeStyles({
     root: {
@@ -28,7 +27,7 @@ const useStyles = makeStyles({
 });
 
 const sample = "static/sample.ofd";
-function ViewerApp() {
+export default function App() {
     const classes = useStyles();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -62,5 +61,3 @@ function ViewerApp() {
         </div>
     );
 }
-
-ReactDOM.render(<ViewerApp />, document.getElementById("root"));

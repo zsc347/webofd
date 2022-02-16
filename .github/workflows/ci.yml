@@ -1,0 +1,42 @@
+name: webodf-build-and-deploy
+
+on:
+    push:
+        branches:
+            - dev
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Set up environment
+              uses: actions/setup-node@v2
+              with:
+                  node-version: "16"
+            - name: Install dependency
+              run: |
+                  npm install
+                  npm test --coverage 
+                  npm run build
+
+    deploy:
+        if: ${{ github.ref == 'refs/heads/dev'}}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Build App
+              run: npm install && npm run build:app
+            - name: Prepare site
+              run: |
+                  mv build site
+                  cd site
+                  touch .nojekyll
+            - name: Publish to gh-pages branch
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./site
+                  publish_branch: gh-pages
