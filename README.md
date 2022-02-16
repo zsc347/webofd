@@ -1,3 +1,7 @@
-# ofd-js
+# WebOFD
 
-A office reader built with JS.
+纯web实现OFD解析和渲染
+
+
+目前处于尝试的阶段，只支持基本的功能。
+
