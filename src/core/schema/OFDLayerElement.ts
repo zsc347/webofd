@@ -123,7 +123,6 @@ export class OFDLayerElement implements OFDElement {
             }
             this._blocks = blocks;
         }
-        console.log(`==> blocks`, this._blocks);
         return this._blocks;
     }
 

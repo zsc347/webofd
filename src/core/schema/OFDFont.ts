@@ -26,7 +26,7 @@ export class OFDFontElement {
     }
 
     public async load(): Promise<string> {
-        if (!this.load) {
+        if (!this._loc) {
             return "";
         }
         const binary = await this.doc.zip.load(`Doc_0/Res/${this._loc}`);

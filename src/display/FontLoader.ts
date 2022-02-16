@@ -11,16 +11,13 @@ export class FontLoader {
             .appendChild(this._styleElement);
     }
 
-    private insertRule(rule: string) {
-        let styleElement = this._styleElement;
-        const styleSheet = styleElement.sheet!;
-        styleSheet.insertRule(rule, styleSheet.cssRules.length);
-    }
-
-    public async importFont(font: OFDFontElement) {
-        const url = await font.load();
-        const rule = `@font-face {font-family:"${font.familyName}";src:${url}}`;
-        this.insertRule(rule);
+    public async importFont(cfont: OFDFontElement) {
+        const url = await cfont.load();
+        if (url) {
+            const font = new FontFace(cfont.familyName, `url(${url})`);
+            await font.load();
+            document.fonts.add(font);
+        }
     }
 
     public dispose() {
