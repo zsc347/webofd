@@ -1,4 +1,4 @@
-import { OFDDocument } from "./document";
+import { OFDDocument } from "../document";
 
 export enum MediaType {
     Image = "Image"

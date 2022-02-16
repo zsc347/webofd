@@ -1,7 +1,7 @@
 import { OFDDocument } from "./document";
 import { PageProxy } from "./page";
 import { importBlock, OFDBlock } from "./schema/OFDBlock";
-import { OFDLayerElement } from "./schema/OFDLayer";
+import { OFDLayerElement } from "./schema/OFDLayerElement";
 
 export class LayerProxy {
     private doc: OFDDocument;
@@ -40,6 +40,4 @@ export class LayerProxy {
         }
         return this._blocks;
     }
-
-    public render({}) {}
 }

@@ -19,6 +19,7 @@ export class PageView {
 
         const canvas = document.createElement("canvas");
         div.appendChild(canvas);
+        div.style.background = "#fff";
         container.appendChild(div);
         const ctx = canvas.getContext("2d", { alpha: true })!;
         const box = page.getPhysicalBox();

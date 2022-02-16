@@ -1,7 +1,7 @@
-import { OFDRect, parseRect } from "../../common/utils";
+import { OFDRect, parseBox } from "../../common/utils";
 import { OFDDocument } from "../document";
 import { OFDElement } from "./OFDElement";
-import { OFDLayerElement } from "./OFDLayer";
+import { OFDLayerElement } from "./OFDLayerElement";
 import { importRootNode } from "./xml";
 
 export interface TempalteRef {
@@ -51,7 +51,7 @@ export class OFDPageElement implements OFDElement {
         // read area
         const areaEl = root.getElementsByTagNameNS(ns, "Area")![0];
         const box = areaEl.getElementsByTagNameNS(ns, "PhysicalBox")![0];
-        this._area = parseRect(box.textContent!);
+        this._area = parseBox(box.textContent!);
 
         // read content layers
         const layerEls = root.getElementsByTagNameNS(ns, "Layer");

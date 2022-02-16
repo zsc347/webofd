@@ -1,6 +1,6 @@
-import { OFDRect, parseCTM, parseRect } from "../../common/utils";
 import { OFDDocument } from "../document";
 import { OFDFontFace } from "./OFDFont";
+import { OFDRect, parseCTM, parseBox } from "../../common/utils";
 
 export abstract class OFDBlock {
     protected _el: Element;
@@ -41,7 +41,7 @@ export class OFDTextObject extends OFDBlock {
     private init() {
         const root = this.element;
         this._id = root.getAttribute("ID")!;
-        this._boundary = parseRect(root.getAttribute("Boundary")!);
+        this._boundary = parseBox(root.getAttribute("Boundary")!);
         this._size = parseFloat(root.getAttribute("Size")!);
         this._font = this.doc.getFont(root.getAttribute("Font")!);
 
@@ -98,7 +98,7 @@ export class OFDImageObject extends OFDBlock {
         const el = this.element;
         this._resID = el.getAttribute("ResourceID")!;
         this._ctm = parseCTM(el.getAttribute("CTM")!);
-        this._boundary = parseRect(el.getAttribute("Boundary")!);
+        this._boundary = parseBox(el.getAttribute("Boundary")!);
     }
 
     public get resourceID() {

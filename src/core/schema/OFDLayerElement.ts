@@ -1,6 +1,6 @@
 import { mm2px } from "../../common/unit";
 import { OFDDocument } from "../document";
-import { ImageMedia, MediaType } from "../media";
+import { ImageMedia, MediaType } from "./OFDMediaElement";
 import {
     BlockType,
     importBlock,

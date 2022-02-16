@@ -1,5 +1,5 @@
 import { FontLoader } from "../display/FontLoader";
-import { importMedia, MultiMedia } from "./media";
+import { importMedia, MultiMedia } from "./schema/OFDMediaElement";
 import { PageProxy } from "./page";
 import { OFDDocumentElement } from "./schema/OFDDocumentElement";
 import { OFDFontElement, OFDFontFace } from "./schema/OFDFont";
@@ -116,13 +116,28 @@ export class OFDDocument {
                 const fontEl = fontEls.item(i)!;
                 const font = new OFDFontElement({ doc: this, el: fontEl });
                 this._fontsMap[font.fontID] = font.face;
-                processes.push(this.fontLoader.importFont(font));
+                if (font.loc) {
+                    processes.push(this.fontLoader.importFont(font));
+                }
             }
             await Promise.all(processes);
         };
         await loadFonts();
 
         console.trace("document init done");
+    }
+
+    public async ensurePage(pageNum: number): Promise<PageProxy | null> {
+        if (this._pages === null) {
+            throw new Error("Illega state");
+        }
+        if (pageNum > this._pages.length) {
+            console.warn(`illegal argument 'pageNum' ${pageNum}`);
+            return null;
+        }
+        const page = this._pages[pageNum];
+        await page.ensure();
+        return page;
     }
 
     public getTemplate(templateID: string) {
@@ -139,19 +154,6 @@ export class OFDDocument {
             throw new Error(`res not found ${resourceID}`);
         }
         return res;
-    }
-
-    public async getPage(pageNum: number): Promise<PageProxy | null> {
-        if (this._pages === null) {
-            throw new Error("Illega state");
-        }
-        if (pageNum > this._pages.length) {
-            console.warn(`illegal argument 'pageNum' ${pageNum}`);
-            return null;
-        }
-        const page = this._pages[pageNum];
-        await page.ensure();
-        return page;
     }
 
     public getFont(fontID: string) {

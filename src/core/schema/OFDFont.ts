@@ -17,13 +17,18 @@ export class OFDFontElement {
         this._el = el;
         this._familyName = el.getAttribute("FamilyName")!;
         this._fontId = el.getAttribute("ID")!;
-        this._loc = el.getElementsByTagNameNS(
+
+        const fileEl = el.getElementsByTagNameNS(
             el.namespaceURI,
             "FontFile"
-        )[0].textContent!;
+        )[0];
+        this._loc = fileEl?.textContent || "";
     }
 
     public async load(): Promise<string> {
+        if (!this.load) {
+            return "";
+        }
         const binary = await this.doc.zip.load(`Doc_0/Res/${this._loc}`);
         return URL.createObjectURL(new Blob([binary]));
     }
@@ -45,5 +50,9 @@ export class OFDFontElement {
             fontID: this._fontId,
             familyName: this._familyName
         } as OFDFontFace;
+    }
+
+    public get element() {
+        return this._el;
     }
 }
