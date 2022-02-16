@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/webofd/static/css/main.df13689a.css",
+    "main.js": "/webofd/static/js/main.47ffdf21.js",
+    "index.html": "/webofd/index.html",
+    "main.df13689a.css.map": "/webofd/static/css/main.df13689a.css.map",
+    "main.47ffdf21.js.map": "/webofd/static/js/main.47ffdf21.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.df13689a.css",
+    "static/js/main.47ffdf21.js"
+  ]
+}
