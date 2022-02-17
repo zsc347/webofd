@@ -20,7 +20,10 @@ export function parseCTM(ctmStr: string) {
 
 // TODO, optimize using iterator to prevent a large array generated
 // sample: "g 14 4.2333 g 2 2.1166 -63.4995 4.2333 2.1167 g 2 4.2333 2.1167 g 2 2.1166"
-export function parseDelta(deltaStr: string): number[] {
+export function parseDelta(deltaStr?: string): number[] {
+    if (!deltaStr) {
+        return [];
+    }
     const parts = deltaStr.split(" ");
     const rs: number[] = [];
 

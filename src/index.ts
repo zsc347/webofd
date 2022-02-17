@@ -1,3 +1,3 @@
-export function webodf() {
-    return "hello, webodf";
+export function webofd() {
+    return "hello, webofd";
 }

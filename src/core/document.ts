@@ -135,7 +135,7 @@ export class OFDDocument {
         await loadPages();
 
         this._ready = true;
-        console.trace("document init done");
+        console.log("document init done");
     }
 
     public async ensurePage(pageNum: number): Promise<PageProxy | null> {

@@ -17,7 +17,8 @@ export abstract class OFDBlock {
 }
 
 export interface TextCode {
-    deltaX: string;
+    deltaY?: string;
+    deltaX?: string;
     x: number;
     y: number;
     text: string;
@@ -50,11 +51,13 @@ export class OFDTextObject extends OFDBlock {
             const ele = children.item(i)!;
             if (ele.localName === "TextCode") {
                 const deltaX = ele.getAttribute("DeltaX");
+                const deltaY = ele.getAttribute("DeltaY");
                 const x = parseFloat(ele.getAttribute("X")!);
                 const y = parseFloat(ele.getAttribute("Y")!);
                 const text = ele.textContent!;
                 this._textCodes.push({
                     deltaX,
+                    deltaY,
                     x,
                     y,
                     text

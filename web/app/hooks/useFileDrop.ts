@@ -16,7 +16,6 @@ export default function useFileDrop<T extends HTMLElement = HTMLElement>(
     const counterRef = useRef<number>(0);
 
     const handleDragEnter = (e: DragEvent) => {
-        console.log(`drag enter ...`);
         e.preventDefault();
         e.stopPropagation();
         if (counterRef.current === 0) {
@@ -59,9 +58,7 @@ export default function useFileDrop<T extends HTMLElement = HTMLElement>(
 
     useEffect(() => {
         const node = dropRef.current;
-        console.log(`runing file drop effect`, active, node);
         if (active && node) {
-            console.log(`drag event`);
             node.addEventListener("dragenter", handleDragEnter);
             node.addEventListener("dragleave", handleDragLeave);
             node.addEventListener("dragover", handleDragOver);

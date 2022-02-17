@@ -1,4 +1,5 @@
 import { mm2px } from "../common/unit";
+import { parseDelta } from "../common/utils";
 import { OFDDocument } from "./document";
 import { PageProxy } from "./page";
 import {
@@ -53,29 +54,32 @@ export class LayerProxy {
         obj: OFDTextObject,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
-        // console.log(`paing text obj`, obj);
         const texts = obj.textCodes;
-        const paint = (text: TextCode) => {
-            const mx = obj.boundary.left + text.x;
-            const my = obj.boundary.top + text.y;
-            const x = mm2px(mx);
-            const y = mm2px(my);
-            ctx.save();
+        ctx.save();
+        const paint = (run: TextCode) => {
+            const dx = parseDelta(run.deltaX);
+            const dy = parseDelta(run.deltaY);
             const fontFamily = obj.font.familyName;
             const fontSize = mm2px(obj.size);
             ctx.font = `${fontSize}px ${fontFamily}`;
-            ctx.fillText(text.text, x, y);
-            ctx.restore();
+            let x = mm2px(obj.boundary.left + run.x);
+            let y = mm2px(obj.boundary.top + run.y);
+            const text = run.text;
+            for (let i = 0, l = text.length; i < l; i++) {
+                const ch = run.text.charAt(i);
+                ctx.fillText(ch, x, y);
+                x += mm2px(dx[i] || 0);
+                y += mm2px(dy[i] || 0);
+            }
         };
         texts.forEach(paint);
-        console.log(`texts painted`);
+        ctx.restore();
     }
 
     private async paintImage(
         obj: OFDImageObject,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
-        console.log(`paint image object`, obj);
         const resId = obj.resourceID;
         const { doc } = this;
         const res = doc.getResource(resId);
@@ -90,7 +94,5 @@ export class LayerProxy {
         const w = mm2px(obj.boundary.width);
         const h = mm2px(obj.boundary.height);
         ctx.drawImage(img, x, y, w, h);
-
-        console.log("image painted", img);
     }
 }

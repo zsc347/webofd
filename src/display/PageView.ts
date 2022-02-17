@@ -27,8 +27,8 @@ export class PageView {
         const height = mm2px(box.height);
         canvas.width = width;
         canvas.height = height;
-        canvas.style.width = `${width * scale}px`;
-        canvas.style.height = `${height * scale}px`;
+        canvas.style.width = `${Math.round(width * scale)}px`;
+        canvas.style.height = `${Math.round(height * scale)}px`;
 
         div.style.width = canvas.style.width;
         div.style.height = canvas.style.height;
