@@ -20,6 +20,8 @@ export class OFDDocument {
     private _resMap: ResourceMap;
     private _fontsMap: FontsMap;
 
+    private _ready: boolean;
+
     private fontLoader: FontLoader;
 
     constructor({ zip, fontLoader }: { zip: Zip; fontLoader: FontLoader }) {
@@ -30,10 +32,14 @@ export class OFDDocument {
         this._tplMap = Object.create(null);
         this._resMap = Object.create(null);
         this._fontsMap = Object.create(null);
+        this._ready = false;
         this.fontLoader = fontLoader;
     }
 
     public async init() {
+        if (this._ready) {
+            return;
+        }
         const { zip } = this;
         const xml = await zip.loadAsDOM("OFD.xml");
         const ofd = importRootNode(xml);
@@ -54,21 +60,23 @@ export class OFDDocument {
             throw new Error("Illegal doc");
         }
 
-        // read pages and templates
         const rootXML = await zip.loadAsDOM(docRootName);
         const root = new OFDDocumentElement({
             doc: this,
-            el: rootXML.getRootNode() as Element
+            el: importRootNode(rootXML) as Element
         });
-        root.import(rootXML);
-        await root.ensure();
-        const pages = root.getPages();
-        this._pages = pages.map(page => new PageProxy({ doc: this, page }));
-        const templates = root.getTemlates();
-        templates.map(page => {
-            const tpl = new PageProxy({ doc: this, page });
-            this._tplMap[page.gid] = tpl;
-        });
+
+        // read pages and templates
+        const loadPages = async () => {
+            await root.ensure();
+            const pages = root.getPages();
+            this._pages = pages.map(page => new PageProxy({ doc: this, page }));
+            const templates = root.getTemlates();
+            templates.map(page => {
+                const tpl = new PageProxy({ doc: this, page });
+                this._tplMap[page.gid] = tpl;
+            });
+        };
 
         // read medias
         const loadMedias = async () => {
@@ -93,8 +101,6 @@ export class OFDDocument {
                 }
             }
         };
-        await loadMedias();
-
         // read and import fonts
         const loadFonts = async () => {
             const { publicRes } = root;
@@ -121,13 +127,19 @@ export class OFDDocument {
                 }
             }
             await Promise.all(processes);
+            console.log(`fonts loaded`);
         };
-        await loadFonts();
 
+        await loadMedias();
+        await loadFonts();
+        await loadPages();
+
+        this._ready = true;
         console.trace("document init done");
     }
 
     public async ensurePage(pageNum: number): Promise<PageProxy | null> {
+        await this.init();
         if (this._pages === null) {
             throw new Error("Illega state");
         }
@@ -181,6 +193,10 @@ export class OFDDocument {
 
     public get zip() {
         return this._zip;
+    }
+
+    public get ready() {
+        return this._ready;
     }
 
     public dispose() {

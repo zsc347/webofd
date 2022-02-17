@@ -39,7 +39,6 @@ export const OFDViewer: FunctionComponent<{
             const zip = new Zip({ url });
             const fontLoader = new FontLoader();
             doc = new OFDDocument({ zip, fontLoader });
-            await doc.init();
             const page = await doc.ensurePage(0);
             if (!page) {
                 throw new Error("unexpected");

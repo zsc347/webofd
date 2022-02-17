@@ -1,12 +1,11 @@
 import { OFDDocument } from "../document";
 import { OFDElement } from "./OFDElement";
 import { OFDPageElement } from "./OFDPageElement";
-import { importRootNode } from "./xml";
 
 export class OFDDocumentElement implements OFDElement {
     private doc: OFDDocument;
 
-    private _el: Element | null;
+    private _el: Element;
     private _inited: boolean;
     private _pages: OFDPageElement[];
     private _templates: OFDPageElement[];
@@ -22,6 +21,24 @@ export class OFDDocumentElement implements OFDElement {
         this._publicRes = "";
         this._documentRes = "";
         this._el = el;
+        this.init();
+    }
+
+    private init() {
+        if (!this._el || !this._el.namespaceURI) {
+            throw new Error("illegal state, element not settled");
+        }
+        const root = this._el;
+        const ns = this._el.namespaceURI;
+
+        const publicResEl = root.getElementsByTagNameNS(ns, "PublicRes")[0];
+        if (publicResEl) {
+            this._publicRes = publicResEl.textContent || "";
+        }
+        const documentResEl = root.getElementsByTagNameNS(ns, "DocumentRes")[0];
+        if (documentResEl) {
+            this._documentRes = documentResEl.textContent || "";
+        }
     }
 
     private checkInited() {
@@ -34,27 +51,12 @@ export class OFDDocumentElement implements OFDElement {
         if (this._inited) {
             return;
         }
-        if (!this._el || !this._el.namespaceURI) {
-            throw new Error("illegal state, element not settled");
-        }
-        const root = this._el;
-        const ns = this._el.namespaceURI;
-
-        const publicResEl = root.getElementsByTagNameNS(ns, "PublicRes")[0];
-        if (publicResEl) {
-            this._publicRes = publicResEl.textContent || "";
-        }
-
-        const documentResEl = root.getElementsByTagNameNS(ns, "DocumentRes")[0];
-        if (documentResEl) {
-            this._documentRes = documentResEl.textContent || "";
-        }
-
-        if (publicResEl)
-            this._pages = await this.loadPages(
-                root.getElementsByTagNameNS(ns, "Page"),
-                "Doc_0/"
-            );
+        const root = this._el!;
+        const ns = root.namespaceURI;
+        this._pages = await this.loadPages(
+            root.getElementsByTagNameNS(ns, "Page"),
+            "Doc_0/"
+        );
         this._templates = await this.loadPages(
             root.getElementsByTagNameNS(ns, "TemplatePage"),
             "Doc_0/",
@@ -95,10 +97,6 @@ export class OFDDocumentElement implements OFDElement {
         }
         await Promise.all(contents);
         return pages;
-    }
-
-    public import(xml: Document) {
-        this._el = importRootNode(xml);
     }
 
     public getPages(): OFDPageElement[] {
