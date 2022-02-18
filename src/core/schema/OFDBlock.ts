@@ -16,6 +16,9 @@ export abstract class OFDBlock {
     abstract get type(): BlockType;
 }
 
+export abstract class TextRun {
+    public abstract name(): string;
+}
 export interface TextCode {
     deltaY?: string;
     deltaX?: string;
@@ -24,18 +27,69 @@ export interface TextCode {
     text: string;
 }
 
+export class TextCodeRun extends TextRun {
+    public deltaY?: string;
+    public deltaX?: string;
+    public x: number;
+    public y: number;
+    public text: string;
+
+    constructor({ deltaY, deltaX, x, y, text }: TextCode) {
+        super();
+        this.deltaX = deltaX;
+        this.deltaY = deltaY;
+        this.x = x;
+        this.y = y;
+        this.text = text;
+    }
+
+    public name(): string {
+        return "TextCode";
+    }
+}
+
+export class FillColorRun extends TextRun {
+    private alpha: string;
+    private value: string;
+
+    constructor({ alpha = "", value = "" }: { alpha: string; value: string }) {
+        super();
+        this.alpha = alpha;
+        this.value = value;
+    }
+
+    public rgba() {
+        const rgb = this.value.split(" ");
+        if (rgb.length !== 3) {
+            return "";
+        }
+        const [r, g, b] = rgb;
+        if (this.alpha) {
+            const alpha = parseInt(this.alpha) / 100;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        return `rgba(${r}, ${g}, ${b})`;
+    }
+
+    public name(): string {
+        return "FillColor";
+    }
+}
+
 export class OFDTextObject extends OFDBlock {
     private doc: OFDDocument;
     private _boundary!: OFDRect;
     private _id!: string;
     private _font!: OFDFontFace;
     private _size!: number;
-    private _textCodes!: TextCode[];
+    private _runs!: TextRun[];
+    private _ctm: number[] | null;
 
     constructor({ doc, el }: { doc: OFDDocument; el: Element }) {
         super({ el });
-        this._textCodes = [];
+        this._runs = [];
         this.doc = doc;
+        this._ctm = null;
         this.init();
     }
 
@@ -46,22 +100,35 @@ export class OFDTextObject extends OFDBlock {
         this._size = parseFloat(root.getAttribute("Size")!);
         this._font = this.doc.getFont(root.getAttribute("Font")!);
 
+        const ctmStr = root.getAttribute("CTM");
+        if (ctmStr) {
+            this._ctm = parseCTM(ctmStr);
+        }
+
         const children = this.element.children;
         for (let i = 0, l = children.length; i < l; i++) {
             const ele = children.item(i)!;
             if (ele.localName === "TextCode") {
-                const deltaX = ele.getAttribute("DeltaX");
-                const deltaY = ele.getAttribute("DeltaY");
+                const deltaX = ele.getAttribute("DeltaX") || "";
+                const deltaY = ele.getAttribute("DeltaY") || "";
                 const x = parseFloat(ele.getAttribute("X")!);
                 const y = parseFloat(ele.getAttribute("Y")!);
                 const text = ele.textContent!;
-                this._textCodes.push({
-                    deltaX,
-                    deltaY,
-                    x,
-                    y,
-                    text
-                } as TextCode);
+                this._runs.push(
+                    new TextCodeRun({
+                        deltaX,
+                        deltaY,
+                        x,
+                        y,
+                        text
+                    })
+                );
+            }
+
+            if (ele.localName === "FillColor") {
+                const alpha = ele.getAttribute("Alpha") || "";
+                const value = ele.getAttribute("Value") || "";
+                this._runs.push(new FillColorRun({ alpha, value }));
             }
         }
     }
@@ -82,8 +149,12 @@ export class OFDTextObject extends OFDBlock {
         return this._font;
     }
 
-    public get textCodes() {
-        return this._textCodes;
+    public get runs() {
+        return this._runs;
+    }
+
+    public get ctm() {
+        return this._ctm;
     }
 }
 

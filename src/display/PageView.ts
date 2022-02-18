@@ -4,15 +4,12 @@ import { PageProxy } from "../core/page";
 export class PageView {
     private _page: PageProxy;
 
-    private scale: number;
-
     constructor({ page }: { page: PageProxy }) {
         this._page = page;
-        this.scale = 1;
     }
 
     public paint(container: HTMLDivElement) {
-        const { page, scale } = this;
+        const { page } = this;
 
         const div = document.createElement("div");
         div.className = "page";
@@ -23,12 +20,12 @@ export class PageView {
         container.appendChild(div);
         const ctx = canvas.getContext("2d", { alpha: true })!;
         const box = page.getPhysicalBox();
-        const width = mm2px(box.width);
-        const height = mm2px(box.height);
+        const width = Math.round(mm2px(box.width));
+        const height = Math.round(mm2px(box.height));
         canvas.width = width;
         canvas.height = height;
-        canvas.style.width = `${Math.round(width * scale)}px`;
-        canvas.style.height = `${Math.round(height * scale)}px`;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
 
         div.style.width = canvas.style.width;
         div.style.height = canvas.style.height;

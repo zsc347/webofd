@@ -43,3 +43,11 @@ export function parseDelta(deltaStr?: string): number[] {
     }
     return rs;
 }
+
+export function roundToDivide(x: number, div: number): number {
+    const r = x % div;
+    if (r === 0) {
+        return x;
+    }
+    return Math.round(x - r + div);
+}

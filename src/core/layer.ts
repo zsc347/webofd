@@ -4,10 +4,12 @@ import { OFDDocument } from "./document";
 import { PageProxy } from "./page";
 import {
     BlockType,
+    FillColorRun,
     OFDBlock,
     OFDImageObject,
     OFDTextObject,
-    TextCode
+    TextCodeRun,
+    TextRun
 } from "./schema/OFDBlock";
 import { OFDLayerElement } from "./schema/OFDLayerElement";
 import { MediaType, ImageMedia } from "./schema/OFDMediaElement";
@@ -54,22 +56,37 @@ export class LayerProxy {
         obj: OFDTextObject,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
-        const texts = obj.textCodes;
+        const texts = obj.runs;
         ctx.save();
-        const paint = (run: TextCode) => {
-            const dx = parseDelta(run.deltaX);
-            const dy = parseDelta(run.deltaY);
-            const fontFamily = obj.font.familyName;
-            const fontSize = mm2px(obj.size);
-            ctx.font = `${fontSize}px ${fontFamily}`;
-            let x = mm2px(obj.boundary.left + run.x);
-            let y = mm2px(obj.boundary.top + run.y);
-            const text = run.text;
-            for (let i = 0, l = text.length; i < l; i++) {
-                const ch = run.text.charAt(i);
-                ctx.fillText(ch, x, y);
-                x += mm2px(dx[i] || 0);
-                y += mm2px(dy[i] || 0);
+
+        ctx.translate(mm2px(obj.boundary.left), mm2px(obj.boundary.top));
+        if (obj.ctm) {
+            const [a, b, c, d, e, f] = obj.ctm;
+            ctx.transform(a, b, c, d, e, f);
+        }
+
+        const paint = (currentRun: TextRun) => {
+            if (currentRun.name() === "FillColor") {
+                const run = currentRun as FillColorRun;
+                ctx.fillStyle = run.rgba();
+            } else if (currentRun.name() === "TextCode") {
+                const run = currentRun as TextCodeRun;
+                const dx = parseDelta(run.deltaX);
+                const dy = parseDelta(run.deltaY);
+                const fontFamily = obj.font.familyName;
+                const fontSize = mm2px(obj.size);
+                ctx.font = `${fontSize}px ${fontFamily}`;
+                let x = mm2px(run.x);
+                let y = mm2px(run.y);
+                const text = run.text;
+                for (let i = 0, l = text.length; i < l; i++) {
+                    const ch = run.text.charAt(i);
+                    ctx.fillText(ch, x, y);
+                    x += Math.round(mm2px(dx[i] || 0));
+                    y += Math.round(mm2px(dy[i] || 0));
+                }
+            } else {
+                console.warn("unexpect text run", currentRun);
             }
         };
         texts.forEach(paint);
@@ -88,11 +105,12 @@ export class LayerProxy {
         }
         const media = res as ImageMedia;
         const img = await media.load();
-
+        ctx.save();
         const x = mm2px(obj.boundary.left);
         const y = mm2px(obj.boundary.top);
-        const w = mm2px(obj.boundary.width);
-        const h = mm2px(obj.boundary.height);
+        const w = Math.floor(mm2px(obj.boundary.width));
+        const h = Math.floor(mm2px(obj.boundary.height));
         ctx.drawImage(img, x, y, w, h);
+        ctx.restore();
     }
 }
