@@ -1,3 +1,5 @@
+import { mm2px } from "./unit";
+
 export interface OFDRect {
     left: number;
     top: number;
@@ -42,6 +44,44 @@ export function parseDelta(deltaStr?: string): number[] {
         }
     }
     return rs;
+}
+
+// sample: "M 0 0 L 71.4112 0 L 71.4112 8.4642 L 0 8.4642 C"
+export function parseAbbreviatedData(abbr: string): {
+    start: {
+        x: number;
+        y: number;
+    } | null;
+    path: Path2D;
+} {
+    const ops = abbr.split(" ");
+    let rs = [];
+    let start = null;
+    for (let i = 0, l = ops.length; i < l; i++) {
+        const op = ops[i];
+        if (op.length === 0) {
+            continue;
+        }
+        if (op === "S") {
+            const x = mm2px(parseFloat(ops[i + 1]));
+            const y = mm2px(parseFloat(ops[i + 2]));
+            start = { x, y };
+        } else if (
+            op === "M" ||
+            op === "L" ||
+            op === "Q" ||
+            op === "B" ||
+            op === "A"
+        ) {
+            rs.push(op);
+        } else {
+            rs.push(`${mm2px(parseFloat(op))}`);
+        }
+    }
+    const pathRaw = rs.join(" ");
+    console.log(`raw path is`, pathRaw);
+    const path = new Path2D(pathRaw);
+    return { start, path };
 }
 
 export function roundToDivide(x: number, div: number): number {

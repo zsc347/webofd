@@ -1,5 +1,5 @@
 import { mm2px } from "../common/unit";
-import { parseDelta } from "../common/utils";
+import { parseAbbreviatedData, parseDelta } from "../common/utils";
 import { OFDDocument } from "./document";
 import { PageProxy } from "./page";
 import {
@@ -9,7 +9,8 @@ import {
     OFDImageObject,
     OFDTextObject,
     TextCodeRun,
-    TextRun
+    Run,
+    OFDPathObject
 } from "./schema/OFDBlock";
 import { OFDLayerElement } from "./schema/OFDLayerElement";
 import { MediaType, ImageMedia } from "./schema/OFDMediaElement";
@@ -50,6 +51,12 @@ export class LayerProxy {
         if (block.type === BlockType.ImageObject) {
             await this.paintImage(block as OFDImageObject, { ctx });
         }
+        if (block.type === BlockType.PathObject) {
+            if (block.element.getAttribute("ID") === "32" || true) {
+                console.log(`paint path object`, block.element);
+                this.paintPath(block as OFDPathObject, { ctx });
+            }
+        }
     }
 
     private paintText(
@@ -65,7 +72,7 @@ export class LayerProxy {
             ctx.transform(a, b, c, d, e, f);
         }
 
-        const paint = (currentRun: TextRun) => {
+        const paint = (currentRun: Run) => {
             if (currentRun.name() === "FillColor") {
                 const run = currentRun as FillColorRun;
                 ctx.fillStyle = run.rgba();
@@ -111,6 +118,36 @@ export class LayerProxy {
         const w = Math.floor(mm2px(obj.boundary.width));
         const h = Math.floor(mm2px(obj.boundary.height));
         ctx.drawImage(img, x, y, w, h);
+        ctx.restore();
+    }
+
+    private paintPath(
+        obj: OFDPathObject,
+        { ctx }: { ctx: CanvasRenderingContext2D }
+    ) {
+        // TODO: find out style inherit & restore
+        ctx.save();
+        ctx.translate(mm2px(obj.boundary.left), mm2px(obj.boundary.top));
+
+        if (obj.lineWidth) {
+            ctx.lineWidth = mm2px(obj.lineWidth);
+        }
+
+        const { runs } = obj;
+        runs.forEach(run => {
+            if (run.name() === "AbbreviatedDataRun") {
+                const data = run.abbreviatedData;
+                const { start, path } = parseAbbreviatedData(data);
+                if (start) {
+                    ctx.moveTo(start.x, start.y);
+                }
+                if (obj.stroke) {
+                    ctx.stroke(path);
+                } else if (obj.fill) {
+                    ctx.fill(path);
+                }
+            }
+        });
         ctx.restore();
     }
 }

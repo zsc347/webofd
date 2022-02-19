@@ -46,7 +46,6 @@ export class PageProxy {
         for (let tpl of this.templates) {
             await tpl.render({ ctx });
         }
-
         // render curerent page
         const layers = this.layers;
         for (let layer of layers) {

@@ -16,7 +16,7 @@ export abstract class OFDBlock {
     abstract get type(): BlockType;
 }
 
-export abstract class TextRun {
+export abstract class Run {
     public abstract name(): string;
 }
 export interface TextCode {
@@ -27,7 +27,7 @@ export interface TextCode {
     text: string;
 }
 
-export class TextCodeRun extends TextRun {
+export class TextCodeRun extends Run {
     public deltaY?: string;
     public deltaX?: string;
     public x: number;
@@ -48,7 +48,7 @@ export class TextCodeRun extends TextRun {
     }
 }
 
-export class FillColorRun extends TextRun {
+export class FillColorRun extends Run {
     private alpha: string;
     private value: string;
 
@@ -82,7 +82,7 @@ export class OFDTextObject extends OFDBlock {
     private _id!: string;
     private _font!: OFDFontFace;
     private _size!: number;
-    private _runs!: TextRun[];
+    private _runs!: Run[];
     private _ctm: number[] | null;
 
     constructor({ doc, el }: { doc: OFDDocument; el: Element }) {
@@ -192,6 +192,83 @@ export class OFDImageObject extends OFDBlock {
     }
 }
 
+export class AbbreviatedDataRun extends Run {
+    public abbreviatedData: string;
+
+    constructor({ abbreviatedData }: { abbreviatedData: string }) {
+        super();
+        this.abbreviatedData = abbreviatedData;
+    }
+
+    public name(): string {
+        return "AbbreviatedDataRun";
+    }
+}
+
+export class OFDPathObject extends OFDBlock {
+    private _boundary!: OFDRect;
+    private _fill: boolean;
+    private _stroke: boolean;
+    private _lineWidth: number | null;
+    private _runs: AbbreviatedDataRun[];
+
+    constructor({ el }: { el: Element }) {
+        super({ el });
+        this._runs = [];
+        this._stroke = false;
+        this._fill = false;
+        this._lineWidth = null;
+        this.init();
+    }
+
+    private init() {
+        const el = this.element;
+        this._boundary = parseBox(el.getAttribute("Boundary")!);
+        this._fill = Boolean(el.getAttribute("Fill"));
+        this._stroke = Boolean(el.getAttribute("Stroke"));
+        if (!this._stroke && !this._fill) {
+            this._stroke = true;
+        }
+
+        this._boundary = parseBox(el.getAttribute("Boundary")!);
+        if (el.getAttribute("LineWidth")) {
+            this._lineWidth = parseFloat(el.getAttribute("LineWidth")!);
+        }
+        const children = el.children;
+        for (let i = 0, l = children.length; i < l; i++) {
+            const ele = children.item(i)!;
+            if (ele.localName === "AbbreviatedData") {
+                const abbreviatedData = ele.textContent!;
+                this._runs.push(new AbbreviatedDataRun({ abbreviatedData }));
+            }
+        }
+    }
+
+    public get boundary() {
+        return this._boundary;
+    }
+
+    public get runs() {
+        return this._runs;
+    }
+
+    public get fill() {
+        return this._fill;
+    }
+
+    public get stroke() {
+        return this._stroke;
+    }
+
+    public get lineWidth() {
+        return this._lineWidth;
+    }
+
+    public get type(): BlockType {
+        return BlockType.PathObject;
+    }
+}
+
 export function importBlock(doc: OFDDocument, el: Element): OFDBlock | null {
     if (el.localName === "TextObject") {
         return new OFDTextObject({ doc, el });
@@ -199,11 +276,16 @@ export function importBlock(doc: OFDDocument, el: Element): OFDBlock | null {
     if (el.localName === "ImageObject") {
         return new OFDImageObject({ el });
     }
+    if (el.localName === "PathObject") {
+        return new OFDPathObject({ el });
+    }
+
     console.warn(`unexpect object in layer`, el);
     return null;
 }
 
 export enum BlockType {
     TextObject = "TextObject",
-    ImageObject = "ImageObject"
+    ImageObject = "ImageObject",
+    PathObject = "PathObject"
 }
