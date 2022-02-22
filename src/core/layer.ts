@@ -52,10 +52,7 @@ export class LayerProxy {
             await this.paintImage(block as OFDImageObject, { ctx });
         }
         if (block.type === BlockType.PathObject) {
-            if (block.element.getAttribute("ID") === "32" || true) {
-                console.log(`paint path object`, block.element);
-                this.paintPath(block as OFDPathObject, { ctx });
-            }
+            this.paintPath(block as OFDPathObject, { ctx });
         }
     }
 

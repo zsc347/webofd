@@ -4,9 +4,18 @@ import useFileDrop, { UploadObjectHandler } from "../../hooks/useFileDrop";
 import clsx from "clsx";
 
 const useStyles = makeStyles({
+    root: {
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+    },
     container: {
-        width: 600,
-        height: 400,
+        maxWidth: "600px",
+        maxHeight: "300px",
+        width: "60%",
+        height: "40%",
         outline: "dashed #4285f4 1px",
         display: "flex",
         alignItems: "center",
@@ -32,13 +41,15 @@ export const FileDropArea: FunctionComponent<{
     const { dragging } = useFileDrop(true, container, handler);
 
     return (
-        <div
-            ref={container}
-            className={clsx(classes.container, dragging && classes.active)}
-        >
-            <span className={classes.message}>
-                拖拽OFD文件到此处进行preview
-            </span>
+        <div className={classes.root}>
+            <div
+                ref={container}
+                className={clsx(classes.container, dragging && classes.active)}
+            >
+                <span className={classes.message}>
+                    拖拽OFD文件到此处进行preview
+                </span>
+            </div>
         </div>
     );
 };

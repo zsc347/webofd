@@ -6,26 +6,28 @@ import { FontLoader } from "../../../../src/display/FontLoader";
 import { PageView } from "../../../../src/display/PageView";
 
 const useStyles = makeStyles({
-    root: {
-        position: "fixed",
-        top: 0,
-        left: 0,
-        height: "100vh",
-        width: "100vw",
-        overflowY: "hidden",
-        overflowX: "hidden",
-        fontSize: 12,
-        padding: "24px",
-        backgroundColor: "#525659"
-    },
     container: {
-        left: "50%",
-        transform: "translateX(-50%)",
-        position: "absolute"
+        overflowY: "auto",
+        overflowX: "auto",
+        padding: "24px",
+        background: "#F7F9FC",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center"
+    },
+    content: {
+        outline: "1px solid #ccc",
+        boxShadow: "0 2px 8px 0 rgb(0 0 0 / 2%)",
+        width: "600px",
+        height: "600px",
+        overflow: "hidden",
+        flexShrink: 0,
+        background: "#999"
     }
 });
 
-export const OFDViewer: FunctionComponent<{
+export const OFDContainer: FunctionComponent<{
     url: string;
 }> = ({ url }) => {
     const classes = useStyles();
@@ -54,9 +56,5 @@ export const OFDViewer: FunctionComponent<{
         };
     }, [url]);
 
-    return (
-        <div className={classes.root}>
-            <div className={classes.container} ref={containerRef}></div>
-        </div>
-    );
+    return <div className={classes.container} ref={containerRef}></div>;
 };
