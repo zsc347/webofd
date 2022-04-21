@@ -205,6 +205,39 @@ export class AbbreviatedDataRun extends Run {
     }
 }
 
+export class OFDPageBlock extends OFDBlock {
+    private doc: OFDDocument;
+    private _blocks: OFDBlock[];
+
+    constructor({ doc, el }: { doc: OFDDocument; el: Element }) {
+        super({ el });
+        this.doc = doc;
+        this._blocks = [];
+        this.parseBlocks();
+    }
+
+    private parseBlocks() {
+        const children = this.element.children;
+        const blocks: OFDBlock[] = [];
+        for (let i = 0, l = children.length; i < l; i++) {
+            const ele = children.item(i) as Element;
+            const block = importBlock(this.doc, ele);
+            if (block) {
+                blocks.push(block);
+            }
+        }
+        this._blocks = blocks;
+    }
+
+    public get blocks() {
+        return this._blocks;
+    }
+
+    public get type(): BlockType {
+        return BlockType.PageBlock;
+    }
+}
+
 export class OFDPathObject extends OFDBlock {
     private _boundary!: OFDRect;
     private _fill: boolean;
@@ -229,7 +262,6 @@ export class OFDPathObject extends OFDBlock {
         if (!this._stroke && !this._fill) {
             this._stroke = true;
         }
-
         this._boundary = parseBox(el.getAttribute("Boundary")!);
         if (el.getAttribute("LineWidth")) {
             this._lineWidth = parseFloat(el.getAttribute("LineWidth")!);
@@ -279,12 +311,19 @@ export function importBlock(doc: OFDDocument, el: Element): OFDBlock | null {
     if (el.localName === "PathObject") {
         return new OFDPathObject({ el });
     }
-
-    console.warn(`unexpect object in layer`, el);
+    if (el.localName === "CompositeObject") {
+        console.warn(`unsupport page block '${el.localName}'`);
+        return null;
+    }
+    if (el.localName === "PageBlock") {
+        return new OFDPageBlock({ doc, el });
+    }
+    console.error(`unexpect object in layer`, el);
     return null;
 }
 
 export enum BlockType {
+    PageBlock = "PageBlock",
     TextObject = "TextObject",
     ImageObject = "ImageObject",
     PathObject = "PathObject"

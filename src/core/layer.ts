@@ -10,7 +10,8 @@ import {
     OFDTextObject,
     TextCodeRun,
     Run,
-    OFDPathObject
+    OFDPathObject,
+    OFDPageBlock
 } from "./schema/OFDBlock";
 import { OFDLayerElement } from "./schema/OFDLayerElement";
 import { MediaType, ImageMedia } from "./schema/OFDMediaElement";
@@ -45,6 +46,10 @@ export class LayerProxy {
         block: OFDBlock,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
+        if (block.type === BlockType.PageBlock) {
+            console.log(`paint page block`, block.element);
+            await this.paintPageBlock(block as OFDPageBlock, { ctx });
+        }
         if (block.type === BlockType.TextObject) {
             await this.paintText(block as OFDTextObject, { ctx });
         }
@@ -52,7 +57,17 @@ export class LayerProxy {
             await this.paintImage(block as OFDImageObject, { ctx });
         }
         if (block.type === BlockType.PathObject) {
-            this.paintPath(block as OFDPathObject, { ctx });
+            await this.paintPath(block as OFDPathObject, { ctx });
+        }
+    }
+
+    private async paintPageBlock(
+        obj: OFDPageBlock,
+        { ctx }: { ctx: CanvasRenderingContext2D }
+    ) {
+        const blocks = obj.blocks;
+        for (let block of blocks) {
+            await this.paintBlock(block, { ctx });
         }
     }
 
@@ -118,7 +133,7 @@ export class LayerProxy {
         ctx.restore();
     }
 
-    private paintPath(
+    private async paintPath(
         obj: OFDPathObject,
         { ctx }: { ctx: CanvasRenderingContext2D }
     ) {
